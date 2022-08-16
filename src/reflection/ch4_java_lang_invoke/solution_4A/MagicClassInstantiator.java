@@ -1,6 +1,7 @@
 package reflection.ch4_java_lang_invoke.solution_4A;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -28,8 +29,18 @@ public class MagicClassInstantiator {
         Class<?> clazz = Class.forName(className);
 
         // 1. Use privateLookupIn() to discover the constructor, even if private
-        MethodHandle constructor = privateLookupIn(clazz, lookup()).findConstructor(clazz,
-                MethodType.methodType(void.class, parameterTypes));
+        MethodHandle constructor;
+        MethodType type = MethodType.methodType(void.class, parameterTypes);
+        try {
+            constructor = MethodHandles.lookup()
+                    .findConstructor(clazz,
+                            type);
+        } catch (IllegalAccessException ex) {
+            constructor = MethodHandles.privateLookupIn(
+                            clazz, MethodHandles.lookup())
+                    .findConstructor(clazz,
+                            type);
+        }
 
         // 2. Construct the object from the MethodHandle
         Object object = constructor.invokeWithArguments(parameters);
